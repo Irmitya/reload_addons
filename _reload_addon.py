@@ -6,7 +6,7 @@ import sys
 from traceback import print_exc as error
 is28 = bool(bpy.app.version >= (2, 80, 0))
 is27 = bool(bpy.app.version < (2, 80, 0))
-prev = '@multi_addons'
+prev = ""
 
 bl_info = {
     'name'			: "Reload Addon",
@@ -41,9 +41,8 @@ class Get:
         pref = (context.preferences if is28 else context.user_preferences)
         list = []
 
-        list.append(('@multi_addons', '@multi_addons', "", 'BLENDER', 1))
-        list.append(('_reload_addon', bl_info['name'], "", 'FILE_REFRESH', 2))
-        mine = ['@multi_addons', '_reload_addon', prev]
+        list.append((__name__, bl_info['name'], "", 'FILE_REFRESH', 2))
+        mine = [__name__, prev]
 
         for (i, a) in enumerate(sorted(pref.addons.keys())):
             if a in mine:
@@ -69,33 +68,30 @@ class Get:
 
 
 def disable(module):
-    # for module in modules:
-        if Get.ops('wm.addon_disable'):
-            bpy.ops.wm.addon_disable(module=module)
-        elif Get.ops('preferences.addon_disable'):
-            bpy.ops.preferences.addon_disable(module=module)
-        else:
-            addon_utils.disable(module_name=module)
+    if Get.ops('wm.addon_disable'):
+        bpy.ops.wm.addon_disable(module=module)
+    elif Get.ops('preferences.addon_disable'):
+        bpy.ops.preferences.addon_disable(module=module)
+    else:
+        addon_utils.disable(module_name=module)
 
 
 def refresh(module):
-    # for module in modules:
-        if Get.ops('wm.addon_refresh'):
-            bpy.ops.wm.addon_refresh()
-        elif Get.ops('preferences.addon_refresh'):
-            bpy.ops.preferences.addon_refresh()
-        else:
-            importlib.reload(module)
+    if Get.ops('wm.addon_refresh'):
+        bpy.ops.wm.addon_refresh()
+    elif Get.ops('preferences.addon_refresh'):
+        bpy.ops.preferences.addon_refresh()
+    else:
+        importlib.reload(module)
 
 
 def enable(module):
-    # for module in modules:
-        if Get.ops('wm.addon_enable'):
-            bpy.ops.wm.addon_enable(module=module)
-        elif Get.ops('preferences.addon_enable'):
-            bpy.ops.preferences.addon_enable(module=module)
-        else:
-            addon_utils.enable(module_name=module)
+    if Get.ops('wm.addon_enable'):
+        bpy.ops.wm.addon_enable(module=module)
+    elif Get.ops('preferences.addon_enable'):
+        bpy.ops.preferences.addon_enable(module=module)
+    else:
+        addon_utils.enable(module_name=module)
 
 
 def reload(self, context, modules):
@@ -105,21 +101,6 @@ def reload(self, context, modules):
     os.system('cls')
     try:
         for addon_name in modules:
-            # addon = sys.modules.get(addon_name)
-
-            # if not addon:
-                # if not addons.get(addon_name):
-                    # self.report({'INFO'}, message="Addon not available")
-                    # return {'CANCELLED'}
-                # try:
-                    # print(f"Addon ['{addon_name}'] not found in system, but still exists. \nDefaulting to addon operators for reload.")
-                    # disable(addon_name)
-                    # refresh(addon_name)
-                    # enable(addon_name)
-                # except:
-                    # self.report({'INFO'}, f"Error: Addon['{addon_name}'] failed to initialize or reload")
-                    # error()
-
             disable(addon_name)
             addon_utils.disable(module_name=addon_name)
             os.system("cls")
@@ -138,7 +119,7 @@ def reload(self, context, modules):
 
             if len(modules) == 1 or addon_name == modules[0]:
                 print(f"Reloading {addon_name}")
-                if addon_name != prev:  # not in ['@multi_addons', '_reload_addon']:
+                if addon_name != prev:  # Print filepath when selecting a new addon
                     print(f"\t{addon.__file__}")
 
             for sub_name in sys.modules:
@@ -160,7 +141,7 @@ def reload(self, context, modules):
 
 
 class SYSTEM_OT_reload_addon(bpy.types.Operator):
-    bl_description = "Reload (my) addon"
+    bl_description = "Click to reload previous addon.\nShift/Ctrl/Alt + Click to select an addon to reload"
     bl_idname = 'wm.reload_addon'
     bl_label = "Reload Addons"
     # bl_options = set({'REGISTER'})
@@ -179,20 +160,17 @@ class SYSTEM_OT_reload_addon(bpy.types.Operator):
         )
 
     def invoke(self, context, event):
-        if any((event.shift, event.ctrl, event.alt)):
+        global prev
+        if (not prev) or any((event.shift, event.ctrl, event.alt)):
             wm = context.window_manager
             wm.invoke_search_popup(self)
             return {'FINISHED'}
         else:
-            global prev
             self.addon = prev
             return self.execute(context)
 
     def execute(self, context):
-        if self.addon == '@multi_addons':
-            modules = [self.addon, __name__]
-        else:
-            modules = [self.addon]
+        modules = [self.addon]
         reload(self, context, modules)
 
         return {'FINISHED'}
