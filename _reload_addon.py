@@ -17,7 +17,7 @@ bl_info = {
     # 'location'		: "Everywhere",
     # 'warning'		: "This addon is still in development.",
     # 'wiki_url'		:	"",
-    'category'		: " Custom",
+    'category'		: "Development",
     }
 
 bprops = [
