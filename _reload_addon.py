@@ -124,6 +124,18 @@ def reload(self, context, modules):
                 self.report({'INFO'}, f"Error: could not find addon['{addon_name}'] in sys.modules")
                 print(f"Error reloading {addon_name}, not found in sys.modules")
                 continue
+                # if not addons.get(addon_name):
+                    # self.report({'INFO'}, message="Addon not available")
+                    # continue
+                # try:
+                    # print(f"Addon ['{addon_name}'] not found in system, but still exists. \nDefaulting to addon operators for reload.")
+                    # disable(addon_name)
+                    # refresh(addon_name)
+                    # enable(addon_name)
+                # except:
+                    # self.report({'INFO'}, f"Error: Addon['{addon_name}'] failed to initialize or reload")
+                    # error()
+                    # continue
 
             if len(modules) == 1 or addon_name == modules[0]:
                 print(f"Reloading {addon_name}")
