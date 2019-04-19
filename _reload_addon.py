@@ -69,6 +69,11 @@ class Get:
             if valid:
                 return eval(f'bpy.ops.{op}')
 
+    def path(addon):
+        file = getattr(addon, '__file__', None)
+        folder = list(getattr(addon, '__path__', [None]))[0]
+        return (folder, file)
+
 
 def disable(module):
     if Get.ops('wm.addon_disable'):
@@ -115,7 +120,7 @@ def reload(self, context, modules):
     for addon_name in modules:
         try:
             addon = sys.modules.get(addon_name)
-            if addon is None:
+            if addon is None or addon.__spec__ is None:
                 self.report({'INFO'}, f"Error: could not find addon['{addon_name}'] in sys.modules")
                 print(f"Error reloading {addon_name}, not found in sys.modules")
                 continue
@@ -125,16 +130,21 @@ def reload(self, context, modules):
                 if addon_name != prev:  # Print filepath when selecting a new addon
                     print(f"\t{addon.__file__}")
 
-            for sub_name in sys.modules:
-                if not sub_name.startswith(f"{addon_name}."):
-                    continue
-                try:
-                    importlib.reload(sys.modules[sub_name])
-                except:
-                    self.report({'INFO'}, f"Error: Sub Module['{sub_name}'] failed to reload")
-                    error()
+            (root, folder) = Get.path(addon)
+            if folder is not None:  # Is folder addon
+                for sub_name in sys.modules:
+                    sub_addon = sys.modules[sub_name]
+                    (file, sub_folder) = Get.path(sub_addon)
+                    if file is None or not file.startswith(folder) or sub_addon.__spec__ is None:
+                        continue
+                    try:
+                        importlib.reload(sub_addon)
+                    except:
+                        self.report({'INFO'}, f"Error: Sub Module['{sub_name}'] failed to reload")
+                        error()
+            # TODO: folders using dots in name would reload too, despite being two separate base folders:
+            #   ex: ["scripts/addon/files", "scripts/addon.different_folder/files"]
             importlib.reload(addon)
-
             enable(addon_name)
         except:
             self.report({'INFO'}, f"Error: Addon['{addon_name}'] failed to reload")
