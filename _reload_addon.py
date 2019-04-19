@@ -61,10 +61,13 @@ class Get:
 
         return list
 
-    def ops(op):
+    def ops(*ops):
         """Validate whether or not an operator (string) is in bpy.ops"""
-        (main, sub) = op.split('.')
-        return sub in dir(eval(f'bpy.ops.{main}'))
+        for op in ops:
+            (main, sub) = op.split('.')
+            valid = sub in dir(eval(f'bpy.ops.{main}'))
+            if valid:
+                return eval(f'bpy.ops.{op}')
 
 
 def disable(module):
